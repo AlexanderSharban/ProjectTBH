@@ -1,55 +1,278 @@
-'use client';
-import { useState } from 'react';
-import Link from 'next/link';
+"use client";
 
-const projects = [
-  { title: 'Проект 1', color: 'bg-blue-900', slug: 'proekt-1' },
-  { title: 'Проект 2', color: 'bg-purple-900', slug: 'proekt-2' },
-  { title: 'Проект 3', color: 'bg-indigo-900', slug: 'proekt-3' }
-];
+import { useState, useEffect } from "react";
 
-export default function ProjectsPage() {
-  const [index, setIndex] = useState(0);
+export default function Minesweeper() {
+  const width = 10;
+  const bombAmount = 20;
+  const [squares, setSquares] = useState([]);
+  const [isGameOver, setIsGameOver] = useState(false);
+  const [gameStarted, setGameStarted] = useState(false);
 
-  const prev = () => {
-    setIndex((prevIndex) => (prevIndex === 0 ? projects.length - 1 : prevIndex - 1));
-  };
+  function createBoard(firstClickIndex = null) {
+    let bombsArray = Array(bombAmount).fill("bomb");
+    let emptyArray = Array(width * width - bombAmount).fill("empty");
+    let gameArray = [...bombsArray, ...emptyArray];
+    
+    if (firstClickIndex !== null) {
+      gameArray = gameArray.filter((_, index) => index !== firstClickIndex);
+      gameArray.sort(() => Math.random() - 0.5);
+      gameArray.splice(firstClickIndex, 0, "empty");
+    } else {
+      gameArray.sort(() => Math.random() - 0.5);
+    }
 
-  const next = () => {
-    setIndex((prevIndex) => (prevIndex + 1) % projects.length);
-  };
+    let board = [];
+    for (let i = 0; i < width * width; i++) {
+      board.push({ 
+        id: i, 
+        type: gameArray[i], 
+        revealed: false, 
+        flagged: false,
+        adjacent: 0
+      });
+    }
+
+    for (let i = 0; i < board.length; i++) {
+      if (board[i].type === "bomb") continue;
+      
+      let total = 0;
+      const neighbors = [
+        i - 1, i + 1,
+        i - width, i + width,
+        i - width - 1, i - width + 1,
+        i + width - 1, i + width + 1
+      ];
+      
+      neighbors.forEach(pos => {
+        if (pos >= 0 && pos < width * width && 
+            board[pos]?.type === "bomb" &&
+            Math.abs(pos % width - i % width) <= 1) {
+          total++;
+        }
+      });
+
+      board[i].adjacent = total;
+    }
+
+    setSquares(board);
+  }
+
+  function click(index) {
+    if (isGameOver || squares[index].flagged) return;
+    
+    if (!gameStarted) {
+      setGameStarted(true);
+      createBoard(index);
+      return;
+    }
+
+    const newSquares = [...squares];
+    const square = newSquares[index];
+    
+    if (square.revealed) return;
+    
+    square.revealed = true;
+
+    if (square.type === "bomb") {
+      gameOver();
+    } else if (square.adjacent === 0) {
+      revealAdjacent(index, newSquares);
+    }
+
+    setSquares(newSquares);
+    checkWinCondition(newSquares);
+  }
+
+  function revealAdjacent(index, newSquares) {
+    const neighbors = [
+      index - 1, index + 1,
+      index - width, index + width,
+      index - width - 1, index - width + 1,
+      index + width - 1, index + width + 1
+    ];
+
+    neighbors.forEach(pos => {
+      if (pos >= 0 && pos < width * width && 
+          !newSquares[pos].revealed && 
+          !newSquares[pos].flagged &&
+          Math.abs(pos % width - index % width) <= 1) {
+        
+        newSquares[pos].revealed = true;
+        
+        if (newSquares[pos].adjacent === 0) {
+          revealAdjacent(pos, newSquares);
+        }
+      }
+    });
+  }
+
+  function addFlag(index, e) {
+    e.preventDefault();
+    if (isGameOver || !gameStarted) return;
+
+    const newSquares = [...squares];
+    newSquares[index].flagged = !newSquares[index].flagged;
+    setSquares(newSquares);
+    checkWinCondition(newSquares);
+  }
+
+  function checkWinCondition(board) {
+    const allNonBombsRevealed = board.every(square => 
+      square.type === "bomb" || square.revealed
+    );
+    
+    if (allNonBombsRevealed) {
+      setIsGameOver(true);
+      alert("Поздравляем! Вы победили!");
+    }
+  }
+
+  function gameOver() {
+    const newSquares = squares.map(square => ({
+      ...square,
+      revealed: square.type === "bomb" ? true : square.revealed
+    }));
+    
+    setSquares(newSquares);
+    setIsGameOver(true);
+    alert("Игра окончена! Вы наступили на мину!");
+  }
+
+  function resetGame() {
+    setSquares([]);
+    setIsGameOver(false);
+    setGameStarted(false);
+    createBoard();
+  }
+
+  function renderSquare(square, index) {
+    let content = "";
+    
+    if (square.revealed) {
+      if (square.type === "bomb") {
+        content = "💣";
+      } else if (square.adjacent > 0) {
+        content = square.adjacent;
+      }
+    } else if (square.flagged) {
+      content = "🚩";
+    }
+
+    return (
+      <div
+        key={index}
+        style={{
+          width: "30px",
+          height: "30px",
+          backgroundColor: square.revealed 
+            ? square.type === "bomb" 
+              ? "#FF0000" 
+              : "#172A45" // Темно-синий для открытых клеток
+            : "#0A192F",  // Еще темнее синий для закрытых
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          cursor: "pointer",
+          fontSize: "14px",
+          fontWeight: "bold",
+          color: square.revealed && square.adjacent > 0 ? "#00FFAA" : "#FFFFFF", // Кислотно-зеленый для цифр
+          border: `1px solid ${square.revealed ? "#00FFAA" : "#0A192F"}`,
+          userSelect: "none",
+          transition: "background-color 0.2s ease"
+        }}
+        onClick={() => click(index)}
+        onContextMenu={(e) => addFlag(index, e)}
+      >
+        {content}
+      </div>
+    );
+  }
+
+  useEffect(() => {
+    createBoard();
+  }, []);
 
   return (
-    <div className="min-h-screen bg-[#02051a] text-white flex flex-col items-center justify-center">
-      <header className="w-full bg-[#0a0d20] py-4 px-8 flex justify-center gap-10 text-green-500 text-xl">
-        {['ДОМ', 'ПРОЕКТЫ', 'ГАЛЛЕРЕЯ', 'КРЕАТОРЫ', 'КОНТАКТЫ', 'НОВОСТИ'].map((text, i) => (
-          <Link key={i} href={`/${text.toLowerCase() === 'дом' ? '' : text.toLowerCase()}`}>
-            <span className="hover:underline">{text}</span>
-          </Link>
-        ))}
-      </header>
-
-      <h1 className="text-3xl my-6">ПРОЕКТЫ</h1>
-
-      <div className="relative w-[80%] max-w-4xl h-[500px] border-4 border-white p-4 flex items-center justify-center">
-        <button onClick={prev} className="absolute left-4 text-4xl">⟵</button>
-
-        <Link href={`/projects/${projects[index].slug}`} className="w-full h-full">
-          <div className={`w-full h-full ${projects[index].color} flex items-center justify-center text-2xl cursor-pointer`}>
-            {projects[index].title}
-          </div>
-        </Link>
-
-        <button onClick={next} className="absolute right-4 text-4xl">⟶</button>
+    <div style={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: "100vh",
+      backgroundColor: "#0A192F", // Темно-синий фон
+      padding: "20px",
+      color: "#FFFFFF"
+    }}>
+      <h1 style={{ 
+        color: "#00FFAA", // Кислотно-зеленый заголовок
+        marginBottom: "20px",
+        textAlign: "center",
+        textShadow: "0 0 5px #00FFAA"
+      }}>
+        Сапёр
+      </h1>
+      
+      <div style={{ 
+        display: "grid",
+        gridTemplateColumns: `repeat(${width}, 30px)`,
+        gridTemplateRows: `repeat(${width}, 30px)`,
+        gap: "2px",
+        backgroundColor: "#00FFAA", // Кислотно-зеленая сетка
+        padding: "5px",
+        borderRadius: "5px",
+        marginBottom: "20px",
+        border: "3px solid #00FFAA"
+      }}>
+        {squares.map((square, index) => renderSquare(square, index))}
       </div>
-
-      <div className="flex space-x-4 mt-8">
-        {['TikTok', 'Telegram', 'VK', 'YouTube', 'Instagram', 'Discord'].map((name, i) => (
-          <div key={i} className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center text-xs">
-            {name[0]}
-          </div>
-        ))}
+      
+      <div style={{ 
+        marginBottom: "20px", 
+        textAlign: "center",
+        color: "#00FFAA" // Кислотно-зеленый текст
+      }}>
+        <p>Левый клик - открыть клетку</p>
+        <p>Правый клик - поставить флажок</p>
       </div>
+      
+      {isGameOver && (
+        <button
+          onClick={resetGame}
+          style={{
+            padding: "10px 20px",
+            backgroundColor: "#0A192F",
+            color: "#00FFAA",
+            border: "2px solid #00FFAA",
+            borderRadius: "5px",
+            cursor: "pointer",
+            fontSize: "16px",
+            fontWeight: "bold",
+            transition: "all 0.3s ease",
+            ":hover": {
+              backgroundColor: "#00FFAA",
+              color: "#0A192F"
+            }
+          }}
+        >
+          Новая игра
+        </button>
+      )}
+      
+      {!gameStarted && !isGameOver && (
+        <div style={{ 
+          backgroundColor: "rgba(10, 25, 47, 0.7)",
+          padding: "10px",
+          borderRadius: "5px",
+          marginTop: "10px",
+          textAlign: "center",
+          border: "1px solid #00FFAA",
+          color: "#00FFAA"
+        }}>
+          <p>Нажмите на любую клетку, чтобы начать игру</p>
+          <p>Число показывает количество мин в соседних клетках</p>
+        </div>
+      )}
     </div>
   );
 }
