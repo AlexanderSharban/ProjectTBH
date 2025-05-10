@@ -10,7 +10,7 @@ export default function Creators() {
         <h1 className="text-4xl font-bold mb-10">КРЕАТОРЫ</h1>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 px-4 w-full max-w-6xl">
-          {[...Array(8)].map((_, i) => (
+          {[...Array(28)].map((_, i) => (
             <div
               key={i}
               className="h-48 border border-white rounded-lg flex items-center justify-center text-3xl bg-gray-900"
