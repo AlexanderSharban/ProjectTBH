@@ -11,6 +11,7 @@ export default function DoomSimulator() {
   const enemies = useRef([]);
   const bullets = useRef([]);
   const lastFrameTime = useRef(0);
+  const lastShotTime = useRef(0);
   const keys = useRef({});
 
   useEffect(() => {
@@ -24,6 +25,8 @@ export default function DoomSimulator() {
       y: 2,
       angle: 0,
       speed: 0.05,
+      isShooting: false,
+      shootAnimation: 0,
     };
 
     const map = [
@@ -37,21 +40,18 @@ export default function DoomSimulator() {
     ];
 
     const castRays = () => {
-      // Очищаем canvas
-      ctx.fillStyle = "#1A2333"; // Темно-синий фон
+      ctx.fillStyle = "#1A2333";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
-      // Рисуем пол (более темный синий)
       ctx.fillStyle = "#0D1426";
       ctx.fillRect(0, canvas.height/2, canvas.width, canvas.height/2);
 
-      const FOV = Math.PI / 3; // 60 градусов
+      const FOV = Math.PI / 3;
       const numRays = canvas.width;
       
       for (let i = 0; i < numRays; i++) {
         const rayAngle = player.angle - FOV/2 + (i/numRays) * FOV;
         
-        // DDA алгоритм
         let rayX = player.x;
         let rayY = player.y;
         let mapX = Math.floor(rayX);
@@ -84,7 +84,6 @@ export default function DoomSimulator() {
           sideDistY = (mapY + 1.0 - player.y) * deltaDistY;
         }
         
-        // Ищем пересечение со стеной
         while (hit === 0) {
           if (sideDistX < sideDistY) {
             sideDistX += deltaDistX;
@@ -103,7 +102,6 @@ export default function DoomSimulator() {
           }
         }
         
-        // Рассчитываем расстояние до стены
         let wallDist;
         if (side === 0) {
           wallDist = (mapX - player.x + (1 - stepX) / 2) / rayDirX;
@@ -111,27 +109,21 @@ export default function DoomSimulator() {
           wallDist = (mapY - player.y + (1 - stepY) / 2) / rayDirY;
         }
         
-        // Корректируем расстояние (убираем "рыбий глаз")
         const correctedDist = wallDist * Math.cos(player.angle - rayAngle);
-        
-        // Вычисляем высоту стены
         const lineHeight = Math.floor(canvas.height / correctedDist);
         const drawStart = Math.max(0, -lineHeight/2 + canvas.height/2);
         const drawEnd = Math.min(canvas.height-1, lineHeight/2 + canvas.height/2);
         
-        // Цвет стены с учетом расстояния (чем дальше - тем темнее)
         const wallShade = Math.min(1, 1.5 / correctedDist);
         const wallColor = `rgb(0, ${Math.floor(100 * wallShade)}, ${Math.floor(200 * wallShade)})`;
-        const borderColor = "#39FF14"; // Ярко-зеленый
+        const borderColor = "#39FF14";
         
-        // Рисуем стену с зелеными границами
         ctx.fillStyle = wallColor;
         ctx.fillRect(i, drawStart, 1, drawEnd - drawStart);
         
-        // Рисуем границы
         ctx.fillStyle = borderColor;
-        ctx.fillRect(i, drawStart, 1, 1); // Верхняя граница
-        ctx.fillRect(i, drawEnd - 1, 1, 1); // Нижняя граница
+        ctx.fillRect(i, drawStart, 1, 1);
+        ctx.fillRect(i, drawEnd - 1, 1, 1);
       }
     };
 
@@ -143,16 +135,113 @@ export default function DoomSimulator() {
       ctx.fillStyle = "#39FF14";
       ctx.fillText(`HEALTH: ${gameState.current.health}`, 10, canvas.height - 15);
       ctx.fillText(`AMMO: ${gameState.current.ammo}`, 150, canvas.height - 15);
+      
+      ctx.fillStyle = "#FF0000";
+      ctx.fillRect(canvas.width/2 - 5, canvas.height/2, 10, 1);
+      ctx.fillRect(canvas.width/2, canvas.height/2 - 5, 1, 10);
     };
 
+    const drawGun = () => {
+      const gunYOffset = player.isShooting ? Math.sin(player.shootAnimation * 0.5) * 3 : 0;
+      const gunY = canvas.height - 50 + gunYOffset;
+      
+      // Цвет пистолета
+      ctx.fillStyle = "#39FF14";
+      
+      // Ручка пистолета (без изменений)
+      ctx.fillRect(canvas.width/2 - 12, gunY, 24, 8);
+      
+      // Утолщенное дуло пистолета (по вашему примеру 01110)
+      // Центральная толстая часть (6px)
+      ctx.fillRect(canvas.width/2 - 3, gunY - 15, 6, 15);
+      // Боковые тонкие части (по 2px)
+      ctx.fillRect(canvas.width/2 - 8, gunY - 10, 2, 10);
+      ctx.fillRect(canvas.width/2 + 6, gunY - 10, 2, 10);
+      
+      // Спусковая скоба
+      ctx.fillRect(canvas.width/2 - 8, gunY + 8, 16, 2);
+      
+      // Вспышка выстрела из дула
+      if (player.isShooting && player.shootAnimation < 0.2) {
+        ctx.fillStyle = "#FF0000";
+        ctx.beginPath();
+        ctx.arc(canvas.width/2, gunY - 15, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      if (player.isShooting) {
+        player.shootAnimation += 0.2;
+        if (player.shootAnimation > Math.PI) {
+          player.isShooting = false;
+          player.shootAnimation = 0;
+        }
+      }
+    };
+
+    const drawBullets = () => {
+      bullets.current.forEach((bullet, index) => {
+        bullet.x += Math.cos(bullet.angle) * bullet.speed;
+        bullet.y += Math.sin(bullet.angle) * bullet.speed;
+        bullet.distance += bullet.speed;
+        
+        const mapX = Math.floor(bullet.x);
+        const mapY = Math.floor(bullet.y);
+        
+        if (mapX < 0 || mapX >= map[0].length || 
+            mapY < 0 || mapY >= map.length || 
+            map[mapY][mapX] === 1 ||
+            bullet.distance > 20) {
+          bullets.current.splice(index, 1);
+          return;
+        }
+        
+        const relX = bullet.x - player.x;
+        const relY = bullet.y - player.y;
+        
+        const rotatedX = relX * Math.cos(-player.angle) - relY * Math.sin(-player.angle);
+        const rotatedY = relX * Math.sin(-player.angle) + relY * Math.cos(-player.angle);
+        
+        if (rotatedX > 0) {
+          const screenX = canvas.width/2 + rotatedY/rotatedX * (canvas.width/2 / Math.tan(FOV/2));
+          const screenY = canvas.height/2 - 10/rotatedX * (canvas.width/2 / Math.tan(FOV/2));
+          
+          if (screenX > 0 && screenX < canvas.width && screenY > 0 && screenY < canvas.height) {
+            ctx.fillStyle = "#FF0000";
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, 2, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      });
+    };
+
+    const shoot = () => {
+      const now = Date.now();
+      if (now - lastShotTime.current > 300 && gameState.current.ammo > 0) {
+        gameState.current.ammo--;
+        lastShotTime.current = now;
+        player.isShooting = true;
+        player.shootAnimation = 0;
+        
+        bullets.current.push({
+          x: player.x,
+          y: player.y,
+          angle: player.angle,
+          speed: 0.3,
+          distance: 0
+        });
+      }
+    };
+
+    const FOV = Math.PI / 3;
+
     const gameLoop = (timestamp) => {
-      if (timestamp - lastFrameTime.current < 33) { // ~30 FPS
+      if (timestamp - lastFrameTime.current < 33) {
         requestAnimationFrame(gameLoop);
         return;
       }
       lastFrameTime.current = timestamp;
 
-      // Управление
       if (keys.current.ArrowUp) {
         const moveX = player.x + Math.cos(player.angle) * player.speed;
         const moveY = player.y + Math.sin(player.angle) * player.speed;
@@ -171,25 +260,17 @@ export default function DoomSimulator() {
       }
       if (keys.current.ArrowLeft) player.angle -= 0.05;
       if (keys.current.ArrowRight) player.angle += 0.05;
+      if (keys.current[" "]) shoot();
 
       castRays();
+      drawBullets();
       drawHUD();
+      drawGun();
       requestAnimationFrame(gameLoop);
     };
 
     const handleKeyDown = (e) => {
       keys.current[e.key] = true;
-      if (e.key === " ") { // Стрельба
-        if (gameState.current.ammo > 0) {
-          gameState.current.ammo--;
-          bullets.current.push({
-            x: player.x,
-            y: player.y,
-            angle: player.angle,
-            speed: 0.2
-          });
-        }
-      }
     };
 
     const handleKeyUp = (e) => {
