@@ -8,8 +8,9 @@ const PADDLE_WIDTH = 15;
 const PADDLE_HEIGHT = 100;
 const BALL_SIZE = 15;
 const PADDLE_MARGIN = 30;
-const BALL_SPEED = 3;
-const PADDLE_SPEED = 8;
+const BALL_SPEED = 4;
+const PADDLE_SPEED = 5; // Скорость ракеток
+const PADDLE_ACCELERATION = 0.2; // Ускорение
 
 export default function PongGame() {
   const [player1Y, setPlayer1Y] = useState(GAME_HEIGHT / 2 - PADDLE_HEIGHT / 2);
@@ -22,8 +23,11 @@ export default function PongGame() {
   const [score, setScore] = useState({ player1: 0, player2: 0 });
   const [gameStarted, setGameStarted] = useState(false);
   const [gameOver, setGameOver] = useState(false);
+  const [paddle1Vel, setPaddle1Vel] = useState(0);
+  const [paddle2Vel, setPaddle2Vel] = useState(0);
   const gameLoopRef = useRef(null);
 
+  // Обработка нажатий клавиш
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (!gameStarted) {
@@ -31,26 +35,57 @@ export default function PongGame() {
         return;
       }
 
+      // Управление для левого игрока (W/S)
       if (e.key.toLowerCase() === 'w') {
-        setPlayer1Y(prev => Math.max(0, prev - PADDLE_SPEED));
+        setPaddle1Vel(-PADDLE_SPEED);
       } else if (e.key.toLowerCase() === 's') {
-        setPlayer1Y(prev => Math.min(GAME_HEIGHT - PADDLE_HEIGHT, prev + PADDLE_SPEED));
+        setPaddle1Vel(PADDLE_SPEED);
       }
       
+      // Управление для правого игрока (стрелки вверх/вниз)
       if (e.key === 'ArrowUp') {
-        setPlayer2Y(prev => Math.max(0, prev - PADDLE_SPEED));
+        setPaddle2Vel(-PADDLE_SPEED);
       } else if (e.key === 'ArrowDown') {
-        setPlayer2Y(prev => Math.min(GAME_HEIGHT - PADDLE_HEIGHT, prev + PADDLE_SPEED));
+        setPaddle2Vel(PADDLE_SPEED);
+      }
+    };
+
+    const handleKeyUp = (e) => {
+      // Управление для левого игрока (W/S)
+      if (e.key.toLowerCase() === 'w' || e.key.toLowerCase() === 's') {
+        setPaddle1Vel(0);
+      }
+      
+      // Управление для правого игрока (стрелки вверх/вниз)
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        setPaddle2Vel(0);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
   }, [gameStarted]);
 
+  // Основной игровой цикл
   const gameLoop = useCallback(() => {
     if (!gameStarted || gameOver) return;
 
+    // Плавное движение ракеток
+    setPlayer1Y(prev => {
+      let newY = prev + paddle1Vel;
+      return Math.max(0, Math.min(GAME_HEIGHT - PADDLE_HEIGHT, newY));
+    });
+    
+    setPlayer2Y(prev => {
+      let newY = prev + paddle2Vel;
+      return Math.max(0, Math.min(GAME_HEIGHT - PADDLE_HEIGHT, newY));
+    });
+
+    // Движение мяча
     setBallPos(prev => {
       let newX = prev.x + ballDir.x * BALL_SPEED;
       let newY = prev.y + ballDir.y * BALL_SPEED;
@@ -58,42 +93,42 @@ export default function PongGame() {
       let newDirY = ballDir.y;
 
       // Отскок от верхней и нижней границы
-      if (newY <= 0 || newY >= GAME_HEIGHT - BALL_SIZE) {
-        newDirY = -newDirY;
+      if (newY <= 0) {
+        newY = 0;
+        newDirY = Math.abs(ballDir.y);
+      } else if (newY >= GAME_HEIGHT - BALL_SIZE) {
+        newY = GAME_HEIGHT - BALL_SIZE;
+        newDirY = -Math.abs(ballDir.y);
       }
 
-      // Проверка на гол (левая граница)
+      // Гол в левые ворота
       if (newX <= 0) {
         setScore(prev => ({ ...prev, player2: prev.player2 + 1 }));
         resetBall(1);
         return { x: GAME_WIDTH / 2 - BALL_SIZE / 2, y: GAME_HEIGHT / 2 - BALL_SIZE / 2 };
       }
       
-      // Проверка на гол (правая граница)
+      // Гол в правые ворота
       if (newX >= GAME_WIDTH - BALL_SIZE) {
         setScore(prev => ({ ...prev, player1: prev.player1 + 1 }));
         resetBall(-1);
         return { x: GAME_WIDTH / 2 - BALL_SIZE / 2, y: GAME_HEIGHT / 2 - BALL_SIZE / 2 };
       }
 
-      // Проверка столкновения с левой ракеткой
-      if (
-        newX <= PADDLE_MARGIN + PADDLE_WIDTH && 
-        newY + BALL_SIZE >= player1Y && 
-        newY <= player1Y + PADDLE_HEIGHT
-      ) {
+      // Столкновение с левой ракеткой
+      if (newX <= PADDLE_MARGIN + PADDLE_WIDTH && 
+          newY + BALL_SIZE >= player1Y && 
+          newY <= player1Y + PADDLE_HEIGHT) {
         const hitPosition = (newY - player1Y) / PADDLE_HEIGHT;
         const bounceAngle = hitPosition * 2 - 1;
         newDirX = 1;
         newDirY = bounceAngle * 1.5;
       }
       
-      // Проверка столкновения с правой ракеткой
-      if (
-        newX >= GAME_WIDTH - PADDLE_MARGIN - PADDLE_WIDTH - BALL_SIZE && 
-        newY + BALL_SIZE >= player2Y && 
-        newY <= player2Y + PADDLE_HEIGHT
-      ) {
+      // Столкновение с правой ракеткой
+      if (newX >= GAME_WIDTH - PADDLE_MARGIN - PADDLE_WIDTH - BALL_SIZE && 
+          newY + BALL_SIZE >= player2Y && 
+          newY <= player2Y + PADDLE_HEIGHT) {
         const hitPosition = (newY - player2Y) / PADDLE_HEIGHT;
         const bounceAngle = hitPosition * 2 - 1;
         newDirX = -1;
@@ -106,16 +141,20 @@ export default function PongGame() {
 
       return { x: newX, y: newY };
     });
-  }, [gameStarted, gameOver, ballDir, player1Y, player2Y]);
+  }, [gameStarted, gameOver, ballDir, player1Y, player2Y, paddle1Vel, paddle2Vel]);
 
+  // Сброс мяча после гола
   const resetBall = (direction) => {
     setBallDir({ 
       x: direction, 
-      y: Math.random() > 0.5 ? 0.5 : -0.5
+      y: Math.random() * 2 - 1 // Случайный угол
     });
     setGameStarted(false);
+    setPaddle1Vel(0);
+    setPaddle2Vel(0);
   };
 
+  // Запуск игрового цикла
   useEffect(() => {
     gameLoopRef.current = gameLoop;
   }, [gameLoop]);
@@ -130,6 +169,7 @@ export default function PongGame() {
     return () => cancelAnimationFrame(animationId);
   }, []);
 
+  // Сброс игры
   const resetGame = () => {
     setScore({ player1: 0, player2: 0 });
     setPlayer1Y(GAME_HEIGHT / 2 - PADDLE_HEIGHT / 2);
@@ -141,6 +181,8 @@ export default function PongGame() {
     setBallDir({ x: 1, y: 0.5 });
     setGameStarted(false);
     setGameOver(false);
+    setPaddle1Vel(0);
+    setPaddle2Vel(0);
   };
 
   return (
@@ -160,7 +202,7 @@ export default function PongGame() {
         textAlign: 'center',
         textShadow: '0 0 5px #00FFAA'
       }}>
-        Pong (2 Players)
+        Пинг-Понг (2 игрока)
       </h1>
 
       <div style={{ 
@@ -171,8 +213,8 @@ export default function PongGame() {
         fontSize: '24px',
         fontWeight: 'bold'
       }}>
-        <div>Player 1 (W/S): {score.player1}</div>
-        <div>Player 2 (↑/↓): {score.player2}</div>
+        <div>Игрок 1 (W/S): {score.player1}</div>
+        <div>Игрок 2 (↑/↓): {score.player2}</div>
       </div>
 
       <div style={{
@@ -183,7 +225,7 @@ export default function PongGame() {
         border: '3px solid #00FFAA',
         marginBottom: '20px'
       }}>
-        {/* Player 1 (left paddle) */}
+        {/* Левая ракетка */}
         <div style={{
           position: 'absolute',
           left: `${PADDLE_MARGIN}px`,
@@ -194,7 +236,7 @@ export default function PongGame() {
           borderRadius: '5px'
         }} />
 
-        {/* Player 2 (right paddle) */}
+        {/* Правая ракетка */}
         <div style={{
           position: 'absolute',
           right: `${PADDLE_MARGIN}px`,
@@ -205,7 +247,7 @@ export default function PongGame() {
           borderRadius: '5px'
         }} />
 
-        {/* Ball */}
+        {/* Мяч */}
         <div style={{
           position: 'absolute',
           left: `${ballPos.x}px`,
@@ -216,7 +258,7 @@ export default function PongGame() {
           borderRadius: '50%'
         }} />
 
-        {/* Center line */}
+        {/* Центральная линия */}
         <div style={{
           position: 'absolute',
           left: '50%',
@@ -237,9 +279,9 @@ export default function PongGame() {
             fontSize: '24px',
             textAlign: 'center'
           }}>
-            <p>Press any key to start</p>
-            <p>Player 1: W/S keys</p>
-            <p>Player 2: Arrow keys</p>
+            <p>Нажмите любую клавишу для начала</p>
+            <p>Игрок 1: клавиши W/S</p>
+            <p>Игрок 2: стрелки ↑/↓</p>
           </div>
         )}
 
@@ -254,36 +296,27 @@ export default function PongGame() {
             fontWeight: 'bold',
             textAlign: 'center'
           }}>
-            Game Over!
+            Игра окончена!
           </div>
         )}
       </div>
 
-      <div style={{ 
-        marginBottom: '20px', 
-        textAlign: 'center'
+      <button onClick={resetGame} style={{
+        padding: '10px 20px',
+        backgroundColor: '#0A192F',
+        color: '#00FFAA',
+        border: '2px solid #00FFAA',
+        borderRadius: '5px',
+        cursor: 'pointer',
+        fontSize: '16px',
+        fontWeight: 'bold',
+        transition: 'all 0.3s ease',
+        ':hover': {
+          backgroundColor: '#00FFAA',
+          color: '#0A192F'
+        }
       }}>
-        <p>Player 1 controls: W (up), S (down)</p>
-        <p>Player 2 controls: ↑ (up), ↓ (down)</p>
-      </div>
-
-      <button
-        onClick={resetGame}
-        style={{
-          padding: '10px 20px',
-          backgroundColor: '#0A192F',
-          color: '#00FFAA',
-          border: '2px solid #00FFAA',
-          borderRadius: '5px',
-          cursor: 'pointer',
-          fontSize: '16px',
-          fontWeight: 'bold',
-          transition: 'all 0.3s ease'
-        }}
-        onMouseOver={(e) => e.target.style.backgroundColor = '#00FFAA'}
-        onMouseOut={(e) => e.target.style.backgroundColor = '#0A192F'}
-      >
-        Reset Game
+        Новая игра
       </button>
     </div>
   );
