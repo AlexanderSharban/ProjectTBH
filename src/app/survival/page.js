@@ -14,19 +14,27 @@ export default function SurvivalGame() {
   const [player, setPlayer] = useState({ x: 5, y: 5 });
   const [direction, setDirection] = useState("right");
   const [currentLocation, setCurrentLocation] = useState("forest");
+  const [inventory, setInventory] = useState({ wood: 0 }); // Инвентарь
+  const [selectedItem, setSelectedItem] = useState(null); // Выбранный предмет (null или "wood")
+  const [lastKey, setLastKey] = useState(null); // Последняя нажатая клавиша
+  const [health, setHealth] = useState(10); // Здоровье игрока
+  const maxHealth = 10; // Максимальное здоровье
 
   const generateForestMap = () => {
-    // Карта леса: 0=земля, 1=ёлка
     const map = Array(MAP_HEIGHT)
       .fill(null)
       .map(() => Array(MAP_WIDTH).fill(0));
 
-    // Добавляем 100 ёлок
+    // Добавляем реку (вертикальная полоса воды на x=30)
+    for (let y = 0; y < MAP_HEIGHT; y++) {
+      map[y][30] = 5; // Вода
+    }
+
     let treesPlaced = 0;
     while (treesPlaced < 100) {
       const x = Math.floor(Math.random() * MAP_WIDTH);
       const y = Math.floor(Math.random() * MAP_HEIGHT);
-      if (map[y][x] === 0) {
+      if (map[y][x] === 0 && x !== 30) { // Не ставим деревья на реке
         map[y][x] = 1; // Ёлка
         treesPlaced++;
       }
@@ -36,52 +44,48 @@ export default function SurvivalGame() {
   };
 
   const generateVillageMap = () => {
-    // Карта деревни: 0=земля, 1=ёлка, 2,3,4=части хижины
     const map = Array(MAP_HEIGHT)
       .fill(null)
       .map(() => Array(MAP_WIDTH).fill(0));
 
-    // Размещаем хижину 3x3 в центре (примерно x=19, y=14)
-    const cabinX = 19; // Начало хижины по x
-    const cabinY = 14; // Начало хижины по y
-    // Хижина 3x3: 2=верх (крыша), 3=середина (стены), 4=низ (основание)
-    map[cabinY][cabinX] = 2;     // Верхний левый
-    map[cabinY][cabinX + 1] = 2; // Верхний центр
-    map[cabinY][cabinX + 2] = 2; // Верхний правый
-    map[cabinY + 1][cabinX] = 3; // Средний левый
-    map[cabinY + 1][cabinX + 1] = 3; // Средний центр
-    map[cabinY + 1][cabinX + 2] = 3; // Средний правый
-    map[cabinY + 2][cabinX] = 4; // Нижний левый
-    map[cabinY + 2][cabinX + 1] = 4; // Нижний центр
-    map[cabinY + 2][cabinX + 2] = 4; // Нижний правый
+    const cabinX = 19;
+    const cabinY = 14;
+    for (let dy = 0; dy < 3; dy++) {
+      for (let dx = 0; dx < 3; dx++) {
+        map[cabinY + dy][cabinX + dx] = 2; // Хижина
+      }
+    }
 
-    // Добавляем ёлки вокруг хижины (в радиусе 1-2 тайлов)
-    const treePositions = [
-      [cabinY - 2, cabinX - 1], [cabinY - 2, cabinX], [cabinY - 2, cabinX + 1], [cabinY - 2, cabinX + 2], [cabinY - 2, cabinX + 3], // Верхний ряд
-      [cabinY - 1, cabinX - 2], [cabinY - 1, cabinX + 4], // Верхние углы
-      [cabinY + 3, cabinX - 2], [cabinY + 3, cabinX + 4], // Нижние углы
-      [cabinY + 3, cabinX - 1], [cabinY + 3, cabinX], [cabinY + 3, cabinX + 1], [cabinY + 3, cabinX + 2], [cabinY + 3, cabinX + 3], // Нижний ряд
-      [cabinY, cabinX - 2], [cabinY + 1, cabinX - 2], [cabinY + 2, cabinX - 2], // Левый ряд
-      [cabinY, cabinX + 4], [cabinY + 1, cabinX + 4], [cabinY + 2, cabinX + 4], // Правый ряд
-    ];
-
-    treePositions.forEach(([y, x]) => {
+    let treesPlaced = 0;
+    while (treesPlaced < 20) {
+      const x = Math.floor(Math.random() * MAP_WIDTH);
+      const y = Math.floor(Math.random() * MAP_HEIGHT);
       if (
-        x >= 0 &&
-        x < MAP_WIDTH &&
-        y >= 0 &&
-        y < MAP_HEIGHT &&
-        map[y][x] === 0
+        map[y][x] === 0 &&
+        !(x >= 19 && x <= 21 && y >= 14 && y <= 16) &&
+        !(x === 20 && y === 17)
       ) {
         map[y][x] = 1; // Ёлка
+        treesPlaced++;
       }
-    });
+    }
 
     return map;
   };
 
-  const [forestMap] = useState(generateForestMap);
-  const [villageMap] = useState(generateVillageMap);
+  const generateHouseMap = () => {
+    const map = Array(MAP_HEIGHT)
+      .fill(null)
+      .map(() => Array(MAP_WIDTH).fill(0));
+
+    map[15][5] = 3; // NPC у левой стены
+
+    return map;
+  };
+
+  const [forestMap, setForestMap] = useState(generateForestMap);
+  const [villageMap, setVillageMap] = useState(generateVillageMap);
+  const [houseMap, setHouseMap] = useState(generateHouseMap);
   const [gameMap, setGameMap] = useState(forestMap);
 
   const drawBlock = (ctx, baseX, baseY, gridX, gridY, color) => {
@@ -101,25 +105,25 @@ export default function SurvivalGame() {
       ctx.fillRect(baseX, baseY, TILE_SIZE, TILE_SIZE);
     }
 
-    // Ёлка (1) — паттерн 8x13 (7 слоёв + ствол)
+    // Ёлка (1)
     if (tile === 1) {
       ctx.fillStyle = "black";
       ctx.fillRect(baseX, baseY, TILE_SIZE, TILE_SIZE);
 
       const treePattern = [
-        [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], // Слой 0 (ширина 1)
-        [0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0], // Слой 1 (ширина 3)
-        [0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0], // Слой 2 (ширина 3)
-        [0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0], // Слой 3 (ширина 5)
-        [0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], // Слой 4 (ширина 7)
-        [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0], // Слой 5 (ширина 9)
-        [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0], // Слой 6 (ширина 11)
-        [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0], // Слой 7 (ширина 11)
-        [0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0], // Ствол (ширина 2)
+        [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+        [0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+        [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+        [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+        [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+        [0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0],
       ];
 
-      const offsetX = Math.floor((GRID_SIZE - 13) / 2); // (10 - 13) / 2 = 0
-      const offsetY = Math.floor((GRID_SIZE - 8) / 2); // (10 - 8) / 2 = 1
+      const offsetX = Math.floor((GRID_SIZE - 13) / 2);
+      const offsetY = Math.floor((GRID_SIZE - 8) / 2);
 
       for (let py = 0; py < treePattern.length; py++) {
         for (let px = 0; px < treePattern[py].length; px++) {
@@ -130,75 +134,112 @@ export default function SurvivalGame() {
       }
     }
 
-    // Хижина: верх (2) — крыша
-    if (tile === 2) {
-      ctx.fillStyle = "black";
-      ctx.fillRect(baseX, baseY, TILE_SIZE, TILE_SIZE);
+    // Хижина (2)
+    if (tile === 2 && x === 19 && y === 14) {
+      const cabinBaseX = 19 * TILE_SIZE;
+      const cabinBaseY = 14 * TILE_SIZE;
 
-      const roofPattern = [
-        [0, 0, 0, 0, 0], // Пусто
-        [0, 0, 1, 0, 0], // Треугольник крыши
-        [0, 1, 1, 1, 0], // Треугольник крыши
-        [1, 1, 1, 1, 1], // Основание крыши
-        [1, 1, 1, 1, 1], // Продолжение основания
+      ctx.fillStyle = "black";
+      ctx.fillRect(cabinBaseX, cabinBaseY, TILE_SIZE * 3, TILE_SIZE * 3);
+
+      const cabinPattern = [
+        [0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0],
+        [0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0],
+        [0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0],
+        [0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0],
+        [1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1],
+        [0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
+        [0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
+        [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+        [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+        [0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0],
+        [0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0],
+        [0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0],
+        [0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0],
+        [0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0],
       ];
 
-      const offsetX = Math.floor((GRID_SIZE - 5) / 2); // (10 - 5) / 2 = 2
-      const offsetY = Math.floor((GRID_SIZE - 5) / 2); // (10 - 5) / 2 = 2
-
-      for (let py = 0; py < roofPattern.length; py++) {
-        for (let px = 0; px < roofPattern[py].length; px++) {
-          if (roofPattern[py][px] === 1) {
-            drawBlock(ctx, baseX, baseY, px + offsetX, py + offsetY, COLOR);
+      for (let py = 0; py < 15; py++) {
+        for (let px = 0; px < 15; px++) {
+          if (cabinPattern[py][px] === 1) {
+            drawBlock(ctx, cabinBaseX, cabinBaseY, px, py, COLOR);
           }
         }
       }
     }
 
-    // Хижина: середина (3) — стены
+    // NPC (3)
     if (tile === 3) {
       ctx.fillStyle = "black";
       ctx.fillRect(baseX, baseY, TILE_SIZE, TILE_SIZE);
 
-      const wallPattern = [
-        [1, 1, 1, 1, 1], // Верх стены
-        [1, 1, 1, 1, 1], // Стена
-        [1, 0, 1, 0, 1], // Окна (или пустоты)
-        [1, 1, 0, 1, 1], // Дверь в центре (для среднего тайла)
-        [1, 1, 1, 1, 1], // Низ стены
+      const npcPattern = [
+        [0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0],
+        [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+        [0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 0, 0],
+        [0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0],
       ];
 
-      const offsetX = Math.floor((GRID_SIZE - 5) / 2); // (10 - 5) / 2 = 2
-      const offsetY = Math.floor((GRID_SIZE - 5) / 2); // (10 - 5) / 2 = 2
+      const offsetX = Math.floor((GRID_SIZE - 12) / 2);
+      const offsetY = Math.floor((GRID_SIZE - 8) / 2);
 
-      for (let py = 0; py < wallPattern.length; py++) {
-        for (let px = 0; px < wallPattern[py].length; px++) {
-          if (wallPattern[py][px] === 1) {
+      for (let py = 0; py < npcPattern.length; py++) {
+        for (let px = 0; px < npcPattern[py].length; px++) {
+          if (npcPattern[py][px] === 1) {
             drawBlock(ctx, baseX, baseY, px + offsetX, py + offsetY, COLOR);
           }
         }
       }
     }
 
-    // Хижина: низ (4) — основание
+    // Блок древесины (4) — полный квадрат 10x10
     if (tile === 4) {
       ctx.fillStyle = "black";
       ctx.fillRect(baseX, baseY, TILE_SIZE, TILE_SIZE);
 
-      const basePattern = [
-        [1, 1, 1, 1, 1], // Верх основания
-        [1, 1, 1, 1, 1], // Основание
-        [1, 1, 1, 1, 1], // Основание
-        [1, 1, 1, 1, 1], // Основание
-        [1, 1, 1, 1, 1], // Низ
+      const woodPattern = Array(10).fill().map(() => Array(10).fill(1)); // 10x10 заполненный квадрат
+
+      const offsetX = 0; // Без смещения, так как заполняем весь тайл
+      const offsetY = 0;
+
+      for (let py = 0; py < woodPattern.length; py++) {
+        for (let px = 0; px < woodPattern[py].length; px++) {
+          if (woodPattern[py][px] === 1) {
+            drawBlock(ctx, baseX, baseY, px + offsetX, py + offsetY, COLOR);
+          }
+        }
+      }
+    }
+
+    // Вода (5) — полосатый узор
+    if (tile === 5) {
+      ctx.fillStyle = "black";
+      ctx.fillRect(baseX, baseY, TILE_SIZE, TILE_SIZE);
+
+      const waterPattern = [
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       ];
 
-      const offsetX = Math.floor((GRID_SIZE - 5) / 2); // (10 - 5) / 2 = 2
-      const offsetY = Math.floor((GRID_SIZE - 5) / 2); // (10 - 5) / 2 = 2
+      const offsetX = 0;
+      const offsetY = 0;
 
-      for (let py = 0; py < basePattern.length; py++) {
-        for (let px = 0; px < basePattern[py].length; px++) {
-          if (basePattern[py][px] === 1) {
+      for (let py = 0; py < waterPattern.length; py++) {
+        for (let px = 0; px < waterPattern[py].length; px++) {
+          if (waterPattern[py][px] === 1) {
             drawBlock(ctx, baseX, baseY, px + offsetX, py + offsetY, COLOR);
           }
         }
@@ -210,31 +251,43 @@ export default function SurvivalGame() {
     const baseX = player.x * TILE_SIZE;
     const baseY = player.y * TILE_SIZE;
 
-    // Фон
     ctx.fillStyle = "black";
     ctx.fillRect(baseX, baseY, TILE_SIZE, TILE_SIZE);
 
-    // Базовый паттерн игрока 8x12 (смотрит вправо)
     const playerPatternRight = [
-      [0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0], // Строка 1
-      [0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0], // Строка 2
-      [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0], // Строка 3
-      [0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0], // Строка 4
-      [0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 0, 0], // Строка 5
-      [0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0], // Строка 6
-      [0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0], // Нога левая
-      [0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0], // Нога правая
+      [0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0],
+      [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+      [0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 0, 0],
+      [0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0],
     ];
 
-    // Зеркальный паттерн для взгляда влево
     const playerPatternLeft = playerPatternRight.map(row => [...row].reverse());
 
-    // Выбираем паттерн в зависимости от направления
-    const playerPattern = direction === "right" ? playerPatternRight : playerPatternLeft;
+    const playerPatternUp = [
+      [0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0],
+      [0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+      [0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 0, 0],
+      [0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0],
+    ];
 
-    // Центрируем шаблон 8x12 в сетке 10x10
-    const offsetX = Math.floor((GRID_SIZE - 12) / 2); // (10 - 12) / 2 = 0
-    const offsetY = Math.floor((GRID_SIZE - 8) / 2); // (10 - 8) / 2 = 1
+    const playerPatternDown = playerPatternUp.map(row => [...row].reverse());
+
+    let playerPattern;
+    if (direction === "right") playerPattern = playerPatternRight;
+    else if (direction === "left") playerPattern = playerPatternLeft;
+    else if (direction === "up") playerPattern = playerPatternUp;
+    else playerPattern = playerPatternDown;
+
+    const offsetX = Math.floor((GRID_SIZE - 12) / 2);
+    const offsetY = Math.floor((GRID_SIZE - 8) / 2);
 
     for (let py = 0; py < playerPattern.length; py++) {
       for (let px = 0; px < playerPattern[py].length; px++) {
@@ -249,73 +302,189 @@ export default function SurvivalGame() {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
 
-    // Очищаем канвас
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Рендерим карту
     for (let y = 0; y < MAP_HEIGHT; y++) {
       for (let x = 0; x < MAP_WIDTH; x++) {
         renderTile(ctx, x, y, gameMap[y][x]);
       }
     }
 
-    // Рендерим игрока
     renderPlayer(ctx);
   };
 
-  const move = (dx, dy) => {
+  const interact = () => {
+    let targetX = player.x;
+    let targetY = player.y;
+
+    if (direction === "right") targetX += 1;
+    else if (direction === "left") targetX -= 1;
+    else if (direction === "up") targetY -= 1;
+    else if (direction === "down") targetY += 1;
+
+    if (
+      targetX >= 0 &&
+      targetX < MAP_WIDTH &&
+      targetY >= 0 &&
+      targetY < MAP_HEIGHT &&
+      (gameMap[targetY][targetX] === 1 || gameMap[targetY][targetX] === 4)
+    ) {
+      const newMap = gameMap.map(row => [...row]);
+      const isTree = gameMap[targetY][targetX] === 1;
+      newMap[targetY][targetX] = 0; // Удаляем ёлку или блок древесины
+
+      if (currentLocation === "forest") setForestMap(newMap);
+      else if (currentLocation === "village") setVillageMap(newMap);
+      setGameMap(newMap);
+
+      setInventory(prev => ({
+        ...prev,
+        wood: prev.wood + (isTree ? 7 : 1),
+      }));
+    }
+  };
+
+  const plantTreeOrPlaceWood = () => {
+    let targetX = player.x;
+    let targetY = player.y;
+
+    if (direction === "right") targetX += 1;
+    else if (direction === "left") targetX -= 1;
+    else if (direction === "up") targetY -= 1;
+    else if (direction === "down") targetY += 1;
+
+    if (
+      targetX >= 0 &&
+      targetX < MAP_WIDTH &&
+      targetY >= 0 &&
+      targetY < MAP_HEIGHT &&
+      gameMap[targetY][targetX] === 0
+    ) {
+      const newMap = gameMap.map(row => [...row]);
+
+      if (selectedItem === "wood" && inventory.wood > 0) {
+        newMap[targetY][targetX] = 4;
+        setInventory(prev => ({ ...prev, wood: prev.wood - 1 }));
+        if (inventory.wood - 1 === 0) setSelectedItem(null);
+      } else if (selectedItem === null) {
+        newMap[targetY][targetX] = 1;
+      } else {
+        return;
+      }
+
+      if (currentLocation === "forest") setForestMap(newMap);
+      else if (currentLocation === "village") setVillageMap(newMap);
+      else if (currentLocation === "house") setHouseMap(newMap);
+      setGameMap(newMap);
+    }
+  };
+
+  const heal = () => {
+    if (health < maxHealth && inventory.wood > 0) {
+      setHealth(prev => prev + 1);
+      setInventory(prev => ({ ...prev, wood: prev.wood - 1 }));
+      if (inventory.wood - 1 === 0 && selectedItem === "wood") {
+        setSelectedItem(null);
+      }
+    }
+  };
+
+  const move = (dx, dy, key) => {
+    const newDirection = dx < 0 ? "left" : dx > 0 ? "right" : dy < 0 ? "up" : "down";
+
+    if (lastKey !== key) {
+      setDirection(newDirection);
+      setLastKey(key);
+      return;
+    }
+
     const newX = player.x + dx;
     const newY = player.y + dy;
 
-    // Проверяем выход за правую границу леса
     if (currentLocation === "forest" && newX >= MAP_WIDTH) {
       setCurrentLocation("village");
       setGameMap(villageMap);
-      setPlayer({ x: 0, y: player.y }); // Перемещаем игрока на левую сторону новой карты
+      setPlayer({ x: 0, y: player.y });
       setDirection("right");
+      setLastKey(null);
       return;
     }
 
-    // Проверяем выход за левую границу деревни (возврат в лес)
     if (currentLocation === "village" && newX < 0) {
       setCurrentLocation("forest");
       setGameMap(forestMap);
-      setPlayer({ x: MAP_WIDTH - 1, y: player.y }); // Перемещаем игрока на правую сторону леса
+      setPlayer({ x: MAP_WIDTH - 1, y: player.y });
       setDirection("left");
+      setLastKey(null);
       return;
     }
 
-    // Обычное движение
+    if (currentLocation === "village" && newX === 20 && newY === 17) {
+      setCurrentLocation("house");
+      setGameMap(houseMap);
+      setPlayer({ x: 35, y: 15 });
+      setDirection("left");
+      setLastKey(null);
+      return;
+    }
+
+    if (currentLocation === "house" && newX === 38 && newY === 15) {
+      setCurrentLocation("village");
+      setGameMap(villageMap);
+      setPlayer({ x: 20, y: 17 });
+      setDirection("down");
+      setLastKey(null);
+      return;
+    }
+
     if (
       newX >= 0 &&
       newX < MAP_WIDTH &&
       newY >= 0 &&
       newY < MAP_HEIGHT &&
-      gameMap[newY][newX] !== 1 && // Нельзя проходить через ёлки
-      gameMap[newY][newX] !== 2 && // Нельзя проходить через части хижины
+      gameMap[newY][newX] !== 1 &&
+      gameMap[newY][newX] !== 2 &&
       gameMap[newY][newX] !== 3 &&
-      gameMap[newY][newX] !== 4
+      gameMap[newY][newX] !== 4 &&
+      gameMap[newY][newX] !== 5 // Нельзя проходить через воду
     ) {
       setPlayer({ x: newX, y: newY });
-      if (dx < 0) {
-        setDirection("left");
-      } else if (dx > 0) {
-        setDirection("right");
-      }
+      setDirection(newDirection);
     }
   };
 
   useEffect(() => {
+    let timeout;
     const handleKey = (e) => {
-      if (e.key === "ArrowUp") move(0, -1);
-      if (e.key === "ArrowDown") move(0, 1);
-      if (e.key === "ArrowLeft") move(-1, 0);
-      if (e.key === "ArrowRight") move(1, 0);
+      if (timeout) return;
+      timeout = setTimeout(() => {
+        if (e.key === "ArrowUp") move(0, -1, "ArrowUp");
+        if (e.key === "ArrowDown") move(0, 1, "ArrowDown");
+        if (e.key === "ArrowLeft") move(-1, 0, "ArrowLeft");
+        if (e.key === "ArrowRight") move(1, 0, "ArrowRight");
+        if (e.key === " ") interact();
+        if (e.key === "Enter") plantTreeOrPlaceWood();
+        if (e.key === "Control") heal();
+        timeout = null;
+      }, 100); // 100ms debounce
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [player, direction, currentLocation, gameMap]);
+  }, [player, direction, currentLocation, gameMap, inventory, selectedItem, lastKey, health]);
+
+  useEffect(() => {
+    const handleWheel = (e) => {
+      e.preventDefault();
+      if (e.deltaY < 0) {
+        if (inventory.wood > 0) setSelectedItem("wood");
+      } else if (e.deltaY > 0) {
+        setSelectedItem(null);
+      }
+    };
+    window.addEventListener("wheel", handleWheel);
+    return () => window.removeEventListener("wheel", handleWheel);
+  }, [inventory]);
 
   useEffect(() => {
     render();
@@ -333,8 +502,11 @@ export default function SurvivalGame() {
       }}
     >
       <h1 style={{ color: COLOR, fontFamily: "monospace", fontSize: "20px" }}>
-        Survival Game (Pixel Style) - {currentLocation === "forest" ? "Forest" : "Village"}
+        Игра на выживание (пиксельный стиль) - {currentLocation === "forest" ? "Лес" : currentLocation === "village" ? "Деревня" : "Дом"}
       </h1>
+      <div style={{ color: COLOR, fontFamily: "monospace", fontSize: "16px", marginBottom: "10px" }}>
+        Инвентарь: Древесина: {inventory.wood} | Выбрано: {selectedItem ? "древесина" : "ничего"} | Здоровье: {health}/{maxHealth}
+      </div>
       <canvas
         ref={canvasRef}
         width={MAP_WIDTH * TILE_SIZE}
@@ -345,7 +517,7 @@ export default function SurvivalGame() {
         }}
       />
       <p style={{ color: "#888", fontFamily: "monospace" }}>
-        Используйте стрелки для движения
+        Стрелки: повернуться/двигаться | Пробел: рубить/ломать | Enter: сажать/ставить | Колесо мыши: выбрать предмет | Ctrl: лечиться
       </p>
     </div>
   );
