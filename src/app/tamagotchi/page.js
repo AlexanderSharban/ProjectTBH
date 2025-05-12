@@ -8,7 +8,6 @@ export default function DoomSimulator() {
     ammo: 50,
     score: 0,
     gameOver: false,
-    gameRestarted: false // Новое состояние для режима "гуляния"
   });
   const enemies = useRef([]);
   const particles = useRef([]);
@@ -319,8 +318,7 @@ export default function DoomSimulator() {
     const explodeEnemy = (enemy, enemyIndex, screenX, screenY, onContact = false) => {
       spawnParticles(screenX, screenY, "explosion", 10);
       if (onContact) {
-        // Уменьшаем урон при контакте с 10 до 5
-        gameState.current.health -= 5;
+        gameState.current.health -= 10;
       } else {
         gameState.current.score += 10;
         gameState.current.ammo += 5;
@@ -370,8 +368,7 @@ export default function DoomSimulator() {
           const dy = player.y - enemy.y;
           const dist = Math.sqrt(dx*dx + dy*dy);
           
-          // Увеличиваем минимальную дистанцию с 0.5 до 0.8
-          const minDistance = 0.8;
+          const minDistance = 0.3;
           if (dist > minDistance) {
             enemy.x += (dx / dist) * enemy.speed;
             enemy.y += (dy / dist) * enemy.speed;
@@ -379,8 +376,7 @@ export default function DoomSimulator() {
         }
 
         const distToPlayer = Math.sqrt((enemy.x - player.x)**2 + (enemy.y - player.y)**2);
-        // Увеличиваем дистанцию взрыва с 0.5 до 0.8
-        if (distToPlayer < 0.8) {
+        if (distToPlayer < 0.3) {
           const relX = enemy.x - player.x;
           const relY = enemy.y - player.y;
           const rotatedX = relX * Math.cos(-player.angle) - relY * Math.sin(-player.angle);
@@ -409,8 +405,8 @@ export default function DoomSimulator() {
             )
           );
 
-          const startX = Math.max(0, Math.floor(screenX - size/2));
-          const endX = Math.min(canvas.width - 1, Math.floor(screenX + size/2));
+          const startX = Math.max(0, Math.floor(screenX - size));
+          const endX = Math.min(canvas.width - 1, Math.floor(screenX + size));
           let isVisible = false;
           for (let x = startX; x <= endX; x++) {
             const rayAngle = player.angle - HALF_FOV + (x/canvas.width) * FOV;
@@ -460,58 +456,58 @@ export default function DoomSimulator() {
               : (mapY - player.y + (1 - stepY)/2) / rayDirY;
             
             const enemyDist = rotatedX;
-            if (enemyDist < wallDist && enemyDist < depthBuffer[x]) {
+            if (enemyDist < wallDist || (enemyDist < depthBuffer[x] + enemy.size)) {
               isVisible = true;
-              depthBuffer[x] = enemyDist;
+              depthBuffer[x] = Math.min(depthBuffer[x], enemyDist);
             }
           }
 
-          if (!isVisible) return;
+          if (isVisible) {
+            ctx.fillStyle = "#00B7EB";
+            ctx.beginPath();
+            ctx.ellipse(screenX, screenY, size/2, size/3, 0, 0, Math.PI * 2);
+            ctx.fill();
 
-          ctx.fillStyle = "#00B7EB";
-          ctx.beginPath();
-          ctx.ellipse(screenX, screenY, size/2, size/3, 0, 0, Math.PI * 2);
-          ctx.fill();
+            ctx.fillStyle = "#00B7EB";
+            ctx.beginPath();
+            ctx.moveTo(screenX - size/2, screenY - size/3);
+            ctx.lineTo(screenX - size/3, screenY - size/2);
+            ctx.lineTo(screenX - size/4, screenY - size/3);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(screenX + size/2, screenY - size/3);
+            ctx.lineTo(screenX + size/3, screenY - size/2);
+            ctx.lineTo(screenX + size/4, screenY - size/3);
+            ctx.fill();
 
-          ctx.fillStyle = "#00B7EB";
-          ctx.beginPath();
-          ctx.moveTo(screenX - size/2, screenY - size/3);
-          ctx.lineTo(screenX - size/3, screenY - size/2);
-          ctx.lineTo(screenX - size/4, screenY - size/3);
-          ctx.fill();
-          ctx.beginPath();
-          ctx.moveTo(screenX + size/2, screenY - size/3);
-          ctx.lineTo(screenX + size/3, screenY - size/2);
-          ctx.lineTo(screenX + size/4, screenY - size/3);
-          ctx.fill();
+            ctx.fillStyle = "#FF69B4";
+            ctx.beginPath();
+            ctx.arc(screenX - size/4, screenY + size/6, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(screenX + size/4, screenY + size/6, 3, 0, Math.PI * 2);
+            ctx.fill();
 
-          ctx.fillStyle = "#FF69B4";
-          ctx.beginPath();
-          ctx.arc(screenX - size/4, screenY + size/6, 3, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.beginPath();
-          ctx.arc(screenX + size/4, screenY + size/6, 3, 0, Math.PI * 2);
-          ctx.fill();
+            ctx.fillStyle = "#00FF00";
+            ctx.beginPath();
+            ctx.arc(screenX, screenY + size/6, 3, 0, Math.PI, true);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(screenX, screenY + size/6 + 3);
+            ctx.lineTo(screenX, screenY + size/6 + 6);
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "#00FF00";
+            ctx.stroke();
 
-          ctx.fillStyle = "#00FF00";
-          ctx.beginPath();
-          ctx.arc(screenX, screenY + size/6, 3, 0, Math.PI, true);
-          ctx.fill();
-          ctx.beginPath();
-          ctx.moveTo(screenX, screenY + size/6 + 3);
-          ctx.lineTo(screenX, screenY + size/6 + 6);
-          ctx.lineWidth = 2;
-          ctx.strokeStyle = "#00FF00";
-          ctx.stroke();
+            ctx.fillStyle = "#00FFFF";
+            ctx.beginPath();
+            ctx.arc(screenX, screenY - size/6, 3, 0, Math.PI * 2);
+            ctx.fill();
 
-          ctx.fillStyle = "#00FFFF";
-          ctx.beginPath();
-          ctx.arc(screenX, screenY - size/6, 3, 0, Math.PI * 2);
-          ctx.fill();
-
-          if (enemy.health < 3) {
-            ctx.fillStyle = "#FF0000";
-            ctx.fillRect(screenX - size/2, screenY - size/2 - 5, size * (enemy.health / 3), 2);
+            if (enemy.health < 3) {
+              ctx.fillStyle = "#FF0000";
+              ctx.fillRect(screenX - size/2, screenY - size/2 - 5, size * (enemy.health / 3), 2);
+            }
           }
         }
       });
@@ -519,28 +515,24 @@ export default function DoomSimulator() {
 
     const drawHUD = () => {
       if (gameState.current.gameOver) {
-        ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "#39FF14";
-        ctx.font = "20px 'Courier New'";
-        ctx.textAlign = "center";
-        ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 20);
+        ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+        ctx.fillRect(0, canvas.height - 30, canvas.width, 30);
+        
         ctx.font = "14px 'Courier New'";
-        ctx.fillText("Press Enter for New Game", canvas.width / 2, canvas.height / 2 + 20);
-        return;
-      }
-
-      ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-      ctx.fillRect(0, canvas.height - 30, canvas.width, 30);
-      
-      ctx.font = "14px 'Courier New'";
-      ctx.fillStyle = "#39FF14";
-      ctx.fillText(`HEALTH: ${gameState.current.health}`, 10, canvas.height - 15);
-      ctx.fillText(`AMMO: ${gameState.current.ammo}`, 120, canvas.height - 15);
-      ctx.fillText(`SCORE: ${gameState.current.score}`, 230, canvas.height - 15);
-      
-      // Не показываем прицел в режиме "gameOver"
-      if (!gameState.current.gameOver) {
+        ctx.fillStyle = "#39FF14";
+        ctx.fillText(`HEALTH: ${gameState.current.health}`, 10, canvas.height - 15);
+        ctx.fillText(`AMMO: ${gameState.current.ammo}`, 120, canvas.height - 15);
+        ctx.fillText(`SCORE: ${gameState.current.score}`, 230, canvas.height - 15);
+      } else {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+        ctx.fillRect(0, canvas.height - 30, canvas.width, 30);
+        
+        ctx.font = "14px 'Courier New'";
+        ctx.fillStyle = "#39FF14";
+        ctx.fillText(`HEALTH: ${gameState.current.health}`, 10, canvas.height - 15);
+        ctx.fillText(`AMMO: ${gameState.current.ammo}`, 120, canvas.height - 15);
+        ctx.fillText(`SCORE: ${gameState.current.score}`, 230, canvas.height - 15);
+        
         ctx.fillStyle = "#FF0000";
         ctx.fillRect(canvas.width/2 - 5, canvas.height/2, 10, 1);
         ctx.fillRect(canvas.width/2, canvas.height/2 - 5, 1, 10);
@@ -548,9 +540,7 @@ export default function DoomSimulator() {
     };
 
     const drawGun = () => {
-      // Не показываем оружие в режиме "gameOver"
       if (gameState.current.gameOver) return;
-      
       const gunYOffset = player.isShooting ? Math.sin(player.shootAnimation * 0.5) * 3 : 0;
       const gunY = canvas.height - 50 + gunYOffset;
       
@@ -591,9 +581,7 @@ export default function DoomSimulator() {
     };
 
     const shoot = () => {
-      // Не стреляем в режиме "gameOver"
       if (gameState.current.gameOver) return;
-      
       const now = Date.now();
       if (now - lastShotTime.current > 300 && gameState.current.ammo > 0 && !gameState.current.gameOver) {
         gameState.current.ammo--;
@@ -626,7 +614,6 @@ export default function DoomSimulator() {
       gameState.current.ammo = 50;
       gameState.current.score = 0;
       gameState.current.gameOver = false;
-      gameState.current.gameRestarted = true;
       player.x = 2;
       player.y = 2;
       enemies.current = [];
@@ -643,18 +630,14 @@ export default function DoomSimulator() {
 
       if (gameState.current.health <= 0 && !gameState.current.gameOver) {
         gameState.current.gameOver = true;
-        gameState.current.gameRestarted = false;
       }
 
       if (gameState.current.gameOver && keys.current.Enter) {
         resetGame();
       }
 
-      // В режиме "gameOver" только передвигаемся, без врагов и стрельбы
-      if (!gameState.current.gameOver || gameState.current.gameRestarted) {
-        if (!gameState.current.gameOver) {
-          spawnEnemy();
-        }
+      if (!gameState.current.gameOver) {
+        spawnEnemy();
         updateParticles();
 
         if (keys.current.ArrowUp) {
@@ -675,16 +658,38 @@ export default function DoomSimulator() {
         }
         if (keys.current.ArrowLeft) player.angle -= 0.05;
         if (keys.current.ArrowRight) player.angle += 0.05;
-        if (keys.current[" "] && !gameState.current.gameOver) shoot();
-      }
+        if (keys.current[" "]) shoot();
 
-      castRays();
-      if (!gameState.current.gameOver) {
+        castRays();
         drawEnemies();
+        drawParticles();
+        drawHUD();
+        drawGun();
+      } else if (gameState.current.gameOver && !keys.current.Enter) {
+        // Exploration mode: only move and render map
+        updateParticles();
+        if (keys.current.ArrowUp) {
+          const moveX = player.x + Math.cos(player.angle) * player.speed;
+          const moveY = player.y + Math.sin(player.angle) * player.speed;
+          if (canMoveTo(moveX, moveY)) {
+            player.x = moveX;
+            player.y = moveY;
+          }
+        }
+        if (keys.current.ArrowDown) {
+          const moveX = player.x - Math.cos(player.angle) * player.speed;
+          const moveY = player.y - Math.sin(player.angle) * player.speed;
+          if (canMoveTo(moveX, moveY)) {
+            player.x = moveX;
+            player.y = moveY;
+          }
+        }
+        if (keys.current.ArrowLeft) player.angle -= 0.05;
+        if (keys.current.ArrowRight) player.angle += 0.05;
+        castRays();
+        drawParticles();
+        drawHUD();
       }
-      drawParticles();
-      drawHUD();
-      drawGun();
       
       requestAnimationFrame(gameLoop);
     };
