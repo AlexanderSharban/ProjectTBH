@@ -1,6 +1,11 @@
 "use client";
 import { useRef, useEffect } from "react";
 
+export const metadata = {
+  title: 'Doom Simulator', 
+  description: 'Простая игра в стиле Doom на React', 
+};
+
 export default function DoomSimulator() {
   const canvasRef = useRef(null);
   const gameState = useRef({

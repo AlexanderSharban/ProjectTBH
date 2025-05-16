@@ -2,6 +2,11 @@
 
 import { useState, useEffect, useCallback } from "react";
 
+export const metadata = {
+  title: 'Тетрис', 
+  description: 'Игра Тетрис на React', 
+};
+
 const COLS = 6;
 const ROWS = 17;
 const SHAPES = [

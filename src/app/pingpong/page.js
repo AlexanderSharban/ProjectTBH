@@ -2,6 +2,11 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 
+export const metadata = {
+  title: 'Пинг-Понг', 
+  description: 'Список участников проекта и краткая информация о них', 
+};
+
 const GAME_WIDTH = 800;
 const GAME_HEIGHT = 500;
 const PADDLE_WIDTH = 15;

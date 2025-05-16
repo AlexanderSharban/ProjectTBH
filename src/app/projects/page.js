@@ -2,6 +2,12 @@
 import { useState } from 'react';
 import Link from 'next/link';
 
+export const metadata = {
+  title: 'ПРОЕКТЫ', 
+  description: 'Список проектов и краткая информация о них',
+  keywords: 'проекты, игры, разработка, креаторы', 
+};
+
 const projects = [
   { title: 'Проект 1', color: 'bg-blue-900', slug: 'proekt-1' },
   { title: 'Проект 2', color: 'bg-purple-900', slug: 'proekt-2' },

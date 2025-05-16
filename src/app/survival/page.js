@@ -2,6 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 
+export const metadata = {
+  title: 'Выживание', 
+  description: 'Игра Выживание на React', 
+};
+
 const TILE_SIZE = 28;
 const MAP_WIDTH = 40;
 const MAP_HEIGHT = 30;

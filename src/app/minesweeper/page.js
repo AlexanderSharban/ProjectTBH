@@ -2,6 +2,11 @@
 
 import { useState, useEffect } from "react";
 
+export const metadata = {
+  title: 'Сапёр', 
+  description: 'Игра Сапёр на React', 
+};
+
 export default function Minesweeper() {
   const width = 10;
   const bombAmount = 20;
