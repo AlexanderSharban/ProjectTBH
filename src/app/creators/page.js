@@ -1,4 +1,8 @@
 import Head from "next/head";
+export const metadata = {
+  title: 'Креаторы', 
+  description: 'Список участников проекта и краткая информация о них', 
+};
 
 export default function Creators() {
   return (

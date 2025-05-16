@@ -756,7 +756,7 @@ export default function SurvivalGame() {
         }}
       >
         <h1 style={{ color: COLOR, fontFamily: "monospace", fontSize: "20px" }}>
-          Игра на выживание (пиксельный стиль) -{" "}
+          Выживание -{" "}
           {currentLocation === "forest"
             ? "Лес"
             : currentLocation === "village"
