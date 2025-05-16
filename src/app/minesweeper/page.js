@@ -1,11 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
-export const metadata = {
-  title: 'Сапёр', 
-  description: 'Игра Сапёр на React', 
-};
+import Head from "next/head";
 
 export default function Minesweeper() {
   const width = 10;
@@ -64,7 +60,7 @@ export default function Minesweeper() {
   }
 
   function click(index) {
-    if (isGameOver || squares[index].flagged) return;
+    if (isGameOver || squares[index]?.flagged) return;
     
     if (!gameStarted) {
       setGameStarted(true);
@@ -99,8 +95,8 @@ export default function Minesweeper() {
 
     neighbors.forEach(pos => {
       if (pos >= 0 && pos < width * width && 
-          !newSquares[pos].revealed && 
-          !newSquares[pos].flagged &&
+          !newSquares[pos]?.revealed && 
+          !newSquares[pos]?.flagged &&
           Math.abs(pos % width - index % width) <= 1) {
         
         newSquares[pos].revealed = true;
@@ -173,15 +169,15 @@ export default function Minesweeper() {
           backgroundColor: square.revealed 
             ? square.type === "bomb" 
               ? "#FF0000" 
-              : "#172A45" // Темно-синий для открытых клеток
-            : "#0A192F",  // Еще темнее синий для закрытых
+              : "#172A45"
+            : "#0A192F",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
           cursor: "pointer",
           fontSize: "14px",
           fontWeight: "bold",
-          color: square.revealed && square.adjacent > 0 ? "#00FFAA" : "#FFFFFF", // Кислотно-зеленый для цифр
+          color: square.revealed && square.adjacent > 0 ? "#00FFAA" : "#FFFFFF",
           border: `1px solid ${square.revealed ? "#00FFAA" : "#0A192F"}`,
           userSelect: "none",
           transition: "background-color 0.2s ease"
@@ -199,85 +195,92 @@ export default function Minesweeper() {
   }, []);
 
   return (
-    <div style={{
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      minHeight: "100vh",
-      backgroundColor: "#0A192F", // Темно-синий фон
-      padding: "20px",
-      color: "#FFFFFF"
-    }}>
-      <h1 style={{ 
-        color: "#00FFAA", // Кислотно-зеленый заголовок
-        marginBottom: "20px",
-        textAlign: "center",
-        textShadow: "0 0 5px #00FFAA"
+    <>
+      <Head>
+        <title>Сапёр</title>
+        <meta name="description" content="Игра Сапёр на React" />
+      </Head>
+      
+      <div style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "100vh",
+        backgroundColor: "#0A192F",
+        padding: "20px",
+        color: "#FFFFFF"
       }}>
-        Сапёр
-      </h1>
-      
-      <div style={{ 
-        display: "grid",
-        gridTemplateColumns: `repeat(${width}, 30px)`,
-        gridTemplateRows: `repeat(${width}, 30px)`,
-        gap: "2px",
-        backgroundColor: "#00FFAA", // Кислотно-зеленая сетка
-        padding: "5px",
-        borderRadius: "5px",
-        marginBottom: "20px",
-        border: "3px solid #00FFAA"
-      }}>
-        {squares.map((square, index) => renderSquare(square, index))}
-      </div>
-      
-      <div style={{ 
-        marginBottom: "20px", 
-        textAlign: "center",
-        color: "#00FFAA" // Кислотно-зеленый текст
-      }}>
-        <p>Левый клик - открыть клетку</p>
-        <p>Правый клик - поставить флажок</p>
-      </div>
-      
-      {isGameOver && (
-        <button
-          onClick={resetGame}
-          style={{
-            padding: "10px 20px",
-            backgroundColor: "#0A192F",
-            color: "#00FFAA",
-            border: "2px solid #00FFAA",
-            borderRadius: "5px",
-            cursor: "pointer",
-            fontSize: "16px",
-            fontWeight: "bold",
-            transition: "all 0.3s ease",
-            ":hover": {
-              backgroundColor: "#00FFAA",
-              color: "#0A192F"
-            }
-          }}
-        >
-          Новая игра
-        </button>
-      )}
-      
-      {!gameStarted && !isGameOver && (
-        <div style={{ 
-          backgroundColor: "rgba(10, 25, 47, 0.7)",
-          padding: "10px",
-          borderRadius: "5px",
-          marginTop: "10px",
+        <h1 style={{ 
+          color: "#00FFAA",
+          marginBottom: "20px",
           textAlign: "center",
-          border: "1px solid #00FFAA",
+          textShadow: "0 0 5px #00FFAA"
+        }}>
+          Сапёр
+        </h1>
+        
+        <div style={{ 
+          display: "grid",
+          gridTemplateColumns: `repeat(${width}, 30px)`,
+          gridTemplateRows: `repeat(${width}, 30px)`,
+          gap: "2px",
+          backgroundColor: "#00FFAA",
+          padding: "5px",
+          borderRadius: "5px",
+          marginBottom: "20px",
+          border: "3px solid #00FFAA"
+        }}>
+          {squares.map((square, index) => renderSquare(square, index))}
+        </div>
+        
+        <div style={{ 
+          marginBottom: "20px", 
+          textAlign: "center",
           color: "#00FFAA"
         }}>
-          <p>Нажмите на любую клетку, чтобы начать игру</p>
-          <p>Число показывает количество мин в соседних клетках</p>
+          <p>Левый клик - открыть клетку</p>
+          <p>Правый клик - поставить флажок</p>
         </div>
-      )}
-    </div>
+        
+        {isGameOver && (
+          <button
+            onClick={resetGame}
+            style={{
+              padding: "10px 20px",
+              backgroundColor: "#0A192F",
+              color: "#00FFAA",
+              border: "2px solid #00FFAA",
+              borderRadius: "5px",
+              cursor: "pointer",
+              fontSize: "16px",
+              fontWeight: "bold",
+              transition: "all 0.3s ease",
+              ":hover": {
+                backgroundColor: "#00FFAA",
+                color: "#0A192F"
+              }
+            }}
+          >
+            Новая игра
+          </button>
+        )}
+        
+        {!gameStarted && !isGameOver && (
+          <div style={{ 
+            backgroundColor: "rgba(10, 25, 47, 0.7)",
+            padding: "10px",
+            borderRadius: "5px",
+            marginTop: "10px",
+            textAlign: "center",
+            border: "1px solid #00FFAA",
+            color: "#00FFAA"
+          }}>
+            <p>Нажмите на любую клетку, чтобы начать игру</p>
+            <p>Число показывает количество мин в соседних клетках</p>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
