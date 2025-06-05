@@ -1,57 +1,173 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-
-
+import Image from 'next/image';
 
 const projects = [
-  { title: 'Проект 1', color: 'bg-blue-900', slug: 'proekt-1' },
-  { title: 'Проект 2', color: 'bg-purple-900', slug: 'proekt-2' },
-  { title: 'Проект 3', color: 'bg-indigo-900', slug: 'proekt-3' }
+  { 
+    title: 'FOREST IS MY HOME', 
+    slug: 'forest-is-my-home',
+    image: '/project1.jpg',
+    description: 'ИГРА НА ЮНИТИ'
+  },
+  { 
+    title: 'PANOPTICON', 
+    slug: 'panopticon',
+    image: '/project2.jpeg',
+    description: 'НАБЛЮДЕНИЯ О КОНТРОЛЕ'
+  },
+  { 
+    title: 'BRANDBOOK', 
+    slug: 'brandbook',
+    image: '/project3.jpg',
+    description: 'РАЗРАБОТКА ФИРМЕННОГО СТИЛЯ'
+  }
+];
+
+const socialLinks = [
+  'https://google.com',
+  'https://google.com',
+  'https://google.com',
+  'https://google.com',
+  'https://google.com',
+  'https://google.com'
 ];
 
 export default function ProjectsPage() {
-  const [index, setIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
-  const prev = () => {
-    setIndex((prevIndex) => (prevIndex === 0 ? projects.length - 1 : prevIndex - 1));
+  const prevProject = () => {
+    setCurrentIndex(prev => (prev === 0 ? projects.length - 1 : prev - 1));
   };
 
-  const next = () => {
-    setIndex((prevIndex) => (prevIndex + 1) % projects.length);
+  const nextProject = () => {
+    setCurrentIndex(prev => (prev + 1) % projects.length);
   };
 
   return (
-    <div className="min-h-screen bg-[#02051a] text-white flex flex-col items-center justify-center">
-      <header className="w-full bg-[#0a0d20] py-4 px-8 flex justify-center gap-10 text-green-500 text-xl">
-        {['ДОМ', 'ПРОЕКТЫ', 'ГАЛЛЕРЕЯ', 'КРЕАТОРЫ', 'КОНТАКТЫ', 'НОВОСТИ'].map((text, i) => (
-          <Link key={i} href={`/${text.toLowerCase() === 'дом' ? '' : text.toLowerCase()}`}>
-            <span className="hover:underline">{text}</span>
-          </Link>
-        ))}
-      </header>
+    <div className="min-h-screen bg-black text-[#00FFAA]">
+      {/* Шапка сайта */}
+      <div className="w-full h-32 bg-black flex items-center justify-center">
+        <Image 
+          src="/png8.png" 
+          alt="Header" 
+          width={1200} 
+          height={200} 
+          className="w-full h-full object-cover"
+          priority
+        />
+      </div>
 
-      <h1 className="text-3xl my-6">ПРОЕКТЫ</h1>
-
-      <div className="relative w-[80%] max-w-4xl h-[500px] border-4 border-white p-4 flex items-center justify-center">
-        <button onClick={prev} className="absolute left-4 text-4xl">⟵</button>
-
-        <Link href={`/projects/${projects[index].slug}`} className="w-full h-full">
-          <div className={`w-full h-full ${projects[index].color} flex items-center justify-center text-2xl cursor-pointer`}>
-            {projects[index].title}
+      {/* Навигация и аватарка */}
+      <div className="w-full bg-[#0A192F] flex items-center justify-between px-4 border-b border-[#00FFAA]">
+        <Link href="/" className="flex-shrink-0">
+          <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-[#00FFAA] my-2">
+            <Image 
+              src="/png7.png" 
+              alt="Avatar" 
+              width={96} 
+              height={96} 
+              className="w-full h-full object-cover"
+              priority
+            />
           </div>
         </Link>
 
-        <button onClick={next} className="absolute right-4 text-4xl">⟶</button>
+        <nav className="text-xl font-bold flex justify-center space-x-10 py-4">
+          <Link href="/"><span className="hover:underline hover:text-[#00FFCC]">ДОМ</span></Link>
+          <Link href="/projects"><span className="hover:underline hover:text-[#00FFCC]">ПРОЕКТЫ</span></Link>
+          <Link href="/gallery"><span className="hover:underline hover:text-[#00FFCC]">ГАЛЕРЕЯ</span></Link>
+          <Link href="/creators"><span className="hover:underline hover:text-[#00FFCC]">КРЕАТОРЫ</span></Link>
+          <Link href="/contacts"><span className="hover:underline hover:text-[#00FFCC]">КОНТАКТЫ</span></Link>
+          <Link href="/news"><span className="hover:underline hover:text-[#00FFCC]">НОВОСТИ</span></Link>
+        </nav>
+
+        <div className="w-24 flex-shrink-0"></div>
       </div>
 
-      <div className="flex space-x-4 mt-8">
-        {['TikTok', 'Telegram', 'VK', 'YouTube', 'Instagram', 'Discord'].map((name, i) => (
-          <div key={i} className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center text-xs">
-            {name[0]}
+      {/* Основное содержимое */}
+      <div className="flex-1 flex flex-col items-center justify-center p-8">
+        <h1 className="text-4xl font-bold mb-12">ПРОЕКТЫ</h1>
+        
+        {/* Карусель проектов */}
+        <div className="relative w-full max-w-4xl h-[600px] mb-16">
+          {/* Кнопки навигации */}
+          <button 
+            onClick={prevProject}
+            className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 bg-black bg-opacity-50 text-[#00FFAA] text-4xl hover:text-[#00FFCC] rounded-full w-12 h-12 flex items-center justify-center"
+          >
+            &larr;
+          </button>
+          
+          <button 
+            onClick={nextProject}
+            className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 bg-black bg-opacity-50 text-[#00FFAA] text-4xl hover:text-[#00FFCC] rounded-full w-12 h-12 flex items-center justify-center"
+          >
+            &rarr;
+          </button>
+
+          {/* Карточка проекта */}
+          <div className="relative w-full h-full rounded-xl overflow-hidden border-4 border-[#00FFAA] group">
+            {/* Фоновое изображение */}
+            <Image
+              src={projects[currentIndex].image}
+              alt={projects[currentIndex].title}
+              fill
+              className="object-cover group-hover:scale-105 transition-transform duration-500"
+              priority
+            />
+            
+            {/* Затемнение и текст */}
+            <div className="absolute inset-0 bg-black bg-opacity-60 flex flex-col items-center justify-center p-8 text-center group-hover:bg-opacity-70 transition-all duration-300">
+              <h2 className="text-3xl md:text-5xl font-bold mb-6">
+                {projects[currentIndex].title}
+              </h2>
+              <p className="text-xl md:text-2xl mb-8 max-w-2xl">
+                {projects[currentIndex].description}
+              </p>
+              <Link 
+                href={`/projects/${projects[currentIndex].slug}`}
+                className="px-8 py-3 bg-[#00FFAA] text-black font-bold rounded-lg hover:bg-[#00FFCC] transition-colors"
+              >
+                ПОДРОБНЕЕ
+              </Link>
+            </div>
           </div>
-        ))}
+        </div>
+
+        {/* Индикаторы текущего проекта */}
+        <div className="flex space-x-4 mb-16">
+          {projects.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentIndex(index)}
+              className={`w-3 h-3 rounded-full ${currentIndex === index ? 'bg-[#00FFAA]' : 'bg-gray-500'}`}
+            />
+          ))}
+        </div>
       </div>
+
+      {/* Соцсети */}
+      <footer className="flex justify-center space-x-10 pb-10">
+        {socialLinks.map((link, i) => (
+          <a 
+            key={i} 
+            href={link} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="hover:scale-110 transition-transform duration-200"
+          >
+            <Image 
+              src={`/png${i+1}.png`} 
+              alt={`Social ${i+1}`} 
+              width={52} 
+              height={52} 
+              className="brightness-110 hover:brightness-125"
+              priority
+            />
+          </a>
+        ))}
+      </footer>
     </div>
   );
 }
