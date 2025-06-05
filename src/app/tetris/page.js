@@ -1,11 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-
-export const metadata = {
-  title: 'Тетрис', 
-  description: 'Игра Тетрис на React', 
-};
+import Head from "next/head";
 
 const COLS = 6;
 const ROWS = 17;
@@ -277,6 +273,7 @@ export default function TetrisGame() {
     }
     
     return (
+      
       <div style={{
         display: 'grid',
         gridTemplateColumns: `repeat(${COLS}, 30px)`,
@@ -304,7 +301,10 @@ export default function TetrisGame() {
       </div>
     );
   };
-
+      <Head>
+        <title>Тетрис</title>
+        <meta name="description" content="Игра Тетрис на React" />
+      </Head>
   return (
     <div style={{
       display: 'flex',
@@ -390,5 +390,5 @@ export default function TetrisGame() {
         </div>
       )}
     </div>
-  );
+  );      
 }

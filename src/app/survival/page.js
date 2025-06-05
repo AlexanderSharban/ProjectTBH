@@ -1,11 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-
-export const metadata = {
-  title: 'Выживание', 
-  description: 'Игра Выживание на React', 
-};
+import Head from "next/head";
 
 const TILE_SIZE = 28;
 const MAP_WIDTH = 40;
@@ -708,6 +704,11 @@ export default function SurvivalGame() {
       </div>
     );
   }
+
+      <Head>
+        <title>Сапёр</title>
+        <meta name="description" content="Игра Сапёр на React" />
+      </Head>
 
   return (
     <div
