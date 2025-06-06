@@ -33,7 +33,7 @@ export const metadata = {
 export default function ProjectsPage() {
   return (
     <div className="max-w-4xl w-full mx-auto px-4 py-16 text-[#00FFAA] flex flex-col items-center">
-      <h1 className="text-4xl font-bold mb-12 text-[#00FFAA] text-center">ПРОЕКТЫ</h1>
+      <h1 className="text-4xl font-bold mb-12 text-[#00FFAA] text-center">В СКОРОМ БУДУЩЕМ!</h1>
 
       {/* Список проектов */}
       <div className="w-full space-y-12">
