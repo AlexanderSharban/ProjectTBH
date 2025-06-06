@@ -118,7 +118,7 @@ export default function Gallery() {
         <div className="flex-1 p-6">
           <h1 className="text-3xl font-bold mb-8 text-center">ГАЛЕРЕЯ</h1>
           
-          <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
+          <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-8">
             {galleryImages.map((img, index) => (
               <div 
                 key={index} 

@@ -45,7 +45,7 @@ export default function Creators() {
       <div className="flex flex-col items-center justify-start py-16 text-[#00FFAA]">
         <h1 className="text-4xl font-bold mb-10 text-[#00FFAA]">КРЕАТОРЫ</h1>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 px-4 w-full max-w-6xl">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-6 px-4 w-full max-w-6xl">
           {/* Первая ячейка с png14 */}
           <Link
             href={creatorLinks[0]}

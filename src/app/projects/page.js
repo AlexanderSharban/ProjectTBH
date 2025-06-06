@@ -27,6 +27,8 @@ const projects = [
   },
 ];
 
+
+
 export default function ProjectsPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
 

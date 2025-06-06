@@ -35,16 +35,14 @@ export default function ProjectsPage() {
     <div className="max-w-4xl w-full mx-auto px-4 py-16 text-[#00FFAA] flex flex-col items-center">
       <h1 className="text-4xl font-bold mb-12 text-[#00FFAA] text-center">В СКОРОМ БУДУЩЕМ!</h1>
 
-      {/* Список проектов */}
-      <div className="w-full space-y-12">
+      <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-11">
         {projects.map((project, index) => (
           <div
             key={index}
-            className="group border-2 border-[#00FFAA] rounded-lg overflow-hidden hover:border-[#00FFCC] transition-colors"
+            className="group border-2 border-[#00FFAA] rounded-lg overflow-hidden hover:border-[#00FFCC] transition-colors flex flex-col"
           >
-            <Link href={`/projects/${project.slug}`} className="flex flex-col md:flex-row">
-              {/* Изображение проекта */}
-              <div className="w-full md:w-1/3 h-48 relative">
+            <Link href={`/projects/${project.slug}`} className="flex flex-col h-full">
+              <div className="w-full h-48 relative">
                 <Image
                   src={project.image}
                   alt={project.title}
@@ -54,20 +52,21 @@ export default function ProjectsPage() {
                 />
               </div>
 
-              {/* Описание проекта */}
-              <div className="w-full md:w-2/3 p-6 bg-[#0A192F] text-center md:text-left">
-                <h2 className="text-2xl md:text-3xl font-bold mb-3 group-hover:text-[#00FFCC] transition-colors">
+              <div className="p-4 bg-[#0A192F] flex-grow flex flex-col">
+                <h2 className="text-xl font-bold mb-2 group-hover:text-[#00FFCC] transition-colors text-center">
                   {project.title}
                 </h2>
-                <p className="text-xl mb-2 text-[#00FFCC]">
+                <p className="text-sm mb-1 text-[#00FFCC] text-center">
                   {project.description}
                 </p>
-                <p className="text-lg mb-4 text-[#00FFAA]">
+                <p className="text-xs mb-2 text-[#00FFAA] text-center">
                   {project.details}
                 </p>
-                <span className="text-[#00FFAA] font-bold group-hover:text-[#00FFCC] transition-colors">
-                  Подробнее →
-                </span>
+                <div className="text-center mt-auto">
+                  <span className="text-sm text-[#00FFAA] font-bold group-hover:text-[#00FFCC] transition-colors">
+                    Подробнее →
+                  </span>
+                </div>
               </div>
             </Link>
           </div>
