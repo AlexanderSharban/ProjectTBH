@@ -21,10 +21,17 @@ export default function Home() {
     '/png12.png', // для tamagotchi
     '/png13.png'  // для survival
   ];
+/*
+node -v
+npm -v
+npm install
+git clone https://github.com/AlexanderSharban/ProjectTBH.git
+cd ProjectTBH
 
+ */
   const socialLinks = [
-    'https://google.com',
-    'https://google.com',
+    'https://nodejs.org/en',
+    'https://git-scm.com/',
     'https://google.com',
     'https://google.com',
     'https://google.com',
