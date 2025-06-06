@@ -26,8 +26,8 @@ const projects = [
 ];
 
 export const metadata = {
-  title: 'Проекты',
-  description: 'Список проектов творческой студии',
+  title: 'Новости',
+  description: 'Список новостей творческой студии',
 };
 
 export default function ProjectsPage() {
