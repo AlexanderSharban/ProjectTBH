@@ -1,5 +1,4 @@
 'use client';
-import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -37,16 +36,6 @@ const socialLinks = [
 ];
 
 export default function ProjectsPage() {
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  const prevProject = () => {
-    setCurrentIndex(prev => (prev === 0 ? projects.length - 1 : prev - 1));
-  };
-
-  const nextProject = () => {
-    setCurrentIndex(prev => (prev + 1) % projects.length);
-  };
-
   return (
     <div className="min-h-screen bg-black text-[#00FFAA]">
       {/* Шапка сайта */}
@@ -89,74 +78,48 @@ export default function ProjectsPage() {
       </div>
 
       {/* Основное содержимое */}
-      <div className="flex-1 flex flex-col items-center justify-center p-8">
+      <div className="flex-1 flex flex-col items-center p-8">
         <h1 className="text-4xl font-bold mb-12">ПРОЕКТЫ</h1>
         
-        {/* Карусель проектов */}
-        <div className="relative w-full max-w-4xl h-[600px] mb-16">
-          {/* Кнопки навигации */}
-          <button 
-            onClick={prevProject}
-            className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 bg-black bg-opacity-50 text-[#00FFAA] text-4xl hover:text-[#00FFCC] rounded-full w-12 h-12 flex items-center justify-center"
-          >
-            &larr;
-          </button>
-          
-          <button 
-            onClick={nextProject}
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 bg-black bg-opacity-50 text-[#00FFAA] text-4xl hover:text-[#00FFCC] rounded-full w-12 h-12 flex items-center justify-center"
-          >
-            &rarr;
-          </button>
-
-          {/* Карточка проекта */}
-          <div className="relative w-full h-full rounded-xl overflow-hidden border-4 border-[#00FFAA]">
-            {/* Фоновое изображение */}
-            <Image
-              src={projects[currentIndex].image}
-              alt={projects[currentIndex].title}
-              fill
-              className="object-cover"
-              priority
-            />
-            
-            {/* Текст на полупрозрачном фоне */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
-              <div className="bg-black bg-opacity-50 p-8 rounded-lg max-w-2xl">
-                <h2 className="text-3xl md:text-5xl font-bold mb-4">
-                  {projects[currentIndex].title}
-                </h2>
-                <p className="text-xl md:text-2xl mb-6">
-                  {projects[currentIndex].description}
-                </p>
-                <p className="text-lg mb-6 text-[#00FFCC]">
-                  {projects[currentIndex].details}
-                </p>
-                <Link 
-                  href={`/projects/${projects[currentIndex].slug}`}
-                  className="inline-block px-8 py-3 bg-[#00FFAA] text-black font-bold rounded-lg hover:bg-[#00FFCC] transition-colors"
-                >
-                  ПОДРОБНЕЕ
-                </Link>
-              </div>
+        {/* Список проектов в стиле новостей */}
+        <div className="w-full max-w-4xl space-y-12">
+          {projects.map((project, index) => (
+            <div key={index} className="group border-2 border-[#00FFAA] rounded-lg overflow-hidden hover:border-[#00FFCC] transition-colors">
+              <Link href={`/projects/${project.slug}`} className="flex flex-col md:flex-row">
+                {/* Изображение проекта */}
+                <div className="w-full md:w-1/3 h-48 relative">
+                  <Image
+                    src={project.image}
+                    alt={project.title}
+                    fill
+                    className="object-cover"
+                    priority
+                  />
+                </div>
+                
+                {/* Описание проекта */}
+                <div className="w-full md:w-2/3 p-6 bg-[#0A192F]">
+                  <h2 className="text-2xl md:text-3xl font-bold mb-3 group-hover:text-[#00FFCC] transition-colors">
+                    {project.title}
+                  </h2>
+                  <p className="text-xl mb-2 text-[#00FFCC]">
+                    {project.description}
+                  </p>
+                  <p className="text-lg mb-4">
+                    {project.details}
+                  </p>
+                  <span className="text-[#00FFAA] font-bold group-hover:text-[#00FFCC] transition-colors">
+                    Подробнее →
+                  </span>
+                </div>
+              </Link>
             </div>
-          </div>
-        </div>
-
-        {/* Индикаторы текущего проекта */}
-        <div className="flex space-x-4 mb-16">
-          {projects.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentIndex(index)}
-              className={`w-3 h-3 rounded-full ${currentIndex === index ? 'bg-[#00FFAA]' : 'bg-gray-500'}`}
-            />
           ))}
         </div>
       </div>
 
       {/* Соцсети */}
-      <footer className="flex justify-center space-x-10 pb-10">
+      <footer className="flex justify-center space-x-10 py-10">
         {socialLinks.map((link, i) => (
           <a 
             key={i} 

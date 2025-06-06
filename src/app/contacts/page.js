@@ -5,18 +5,18 @@ import Image from 'next/image';
 const contacts = [
   {
     name: 'Электронная почта',
-    value: 'contact@example.com',
-    link: 'mailto:contact@example.com'
+    value: 'alex.sharb4@gmail.com',
+    link: 'mailto:alex.sharb4@gmail.com'
   },
   {
     name: 'Телефон',
-    value: '+7 (123) 456-78-90',
-    link: 'tel:+71234567890'
+    value: '5 555-55-55',
+    link: 'tel:5555-55-55'
   },
   {
     name: 'Telegram',
-    value: '@yourusername',
-    link: 'https://t.me/yourusername'
+    value: '@username123',
+    link: 'https://t.me/username123'
   },
   {
     name: 'Локация',
@@ -26,13 +26,13 @@ const contacts = [
 ];
 
 const socialLinks = [
-  { name: 'TikTok', icon: '/png1.png', link: 'https://tiktok.com' },
-  { name: 'Telegram', icon: '/png2.png', link: 'https://telegram.org' },
-  { name: 'VK', icon: '/png3.png', link: 'https://vk.com' },
-  { name: 'YouTube', icon: '/png4.png', link: 'https://youtube.com' },
-  { name: 'Instagram', icon: '/png5.png', link: 'https://instagram.com' },
-  { name: 'Discord', icon: '/png6.png', link: 'https://discord.com' }
-];
+    'https://google.com',
+    'https://google.com',
+    'https://google.com',
+    'https://google.com',
+    'https://google.com',
+    'https://google.com'
+  ];
 
 export default function ContactsPage() {
   return (
@@ -102,26 +102,26 @@ export default function ContactsPage() {
       </div>
 
       {/* Соцсети */}
-      <footer className="flex justify-center space-x-10 pb-10">
-        {socialLinks.map((social, i) => (
-          <a 
-            key={i} 
-            href={social.link} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="hover:scale-110 transition-transform duration-200"
-            title={social.name}
-          >
-            <Image 
-              src={social.icon} 
-              alt={social.name} 
-              width={52} 
-              height={52} 
-              className="brightness-110 hover:brightness-125"
-            />
-          </a>
-        ))}
-      </footer>
-    </div>
-  );
-}
+            <footer className="flex justify-center space-x-10 pb-10">
+              {socialLinks.map((link, i) => (
+                <a 
+                  key={i} 
+                  href={link} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="hover:scale-110 transition-transform duration-200"
+                >
+                  <Image 
+                    src={`/png${i+1}.png`} 
+                    alt={`Social ${i+1}`} 
+                    width={52} 
+                    height={52} 
+                    className="brightness-110 hover:brightness-125"
+                    priority
+                  />
+                </a>
+              ))}
+            </footer>
+          </div>
+        );
+      }

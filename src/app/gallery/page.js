@@ -18,6 +18,15 @@ export default function Gallery() {
     '/gallery10.jpg',
   ];
 
+    const socialLinks = [
+    'https://google.com',
+    'https://google.com',
+    'https://google.com',
+    'https://google.com',
+    'https://google.com',
+    'https://google.com'
+  ];
+  
   const [selectedImage, setSelectedImage] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [scale, setScale] = useState(1);

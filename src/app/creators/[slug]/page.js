@@ -47,9 +47,9 @@ export default function CreatorPage() {
             </div>
             
             <div className="text-center md:text-left">
-              <h1 className="text-3xl font-bold mb-4">Имя Креатора</h1>
-              <p className="text-lg mb-4">Роль в проекте</p>
-              <p className="text-[#00FFAA]">Описание деятельности и вклада в проект</p>
+              <h1 className="text-3xl font-bold mb-4">Александр</h1>
+              <p className="text-lg mb-4">Роль в проекте:Художник</p>
+              <p className="text-[#00FFAA]">Занимается созданием спрайтов и анимации.</p>
             </div>
           </div>
 
@@ -57,16 +57,16 @@ export default function CreatorPage() {
             <div className="border-2 border-[#00FFAA] rounded-lg p-6">
               <h2 className="text-2xl font-bold mb-4">Работы</h2>
               <ul className="space-y-2">
-                <li>• Проект 1</li>
-                <li>• Проект 2</li>
-                <li>• Проект 3</li>
+                <li>• FOREST IS MY HOME</li>
+                <li>• PANOPTICON</li>
+                <li>• TBH</li>
               </ul>
             </div>
 
             <div className="border-2 border-[#00FFAA] rounded-lg p-6">
               <h2 className="text-2xl font-bold mb-4">Контакты</h2>
               <div className="flex justify-center space-x-6">
-                {['Telegram', 'GitHub', 'Email'].map((social, i) => (
+                {['Tg:username123',  'alex.sharb4@gmail.com'].map((social, i) => (
                   <a 
                     key={i} 
                     href="#" 
